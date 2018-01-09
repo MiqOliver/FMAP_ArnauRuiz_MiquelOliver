@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[System.Serializable]
 public struct Vec3
 {
     public float x, y, z;
@@ -40,20 +41,14 @@ public struct Vec3
         return Mathf.Acos(Dot(lhs, rhs) / (lhs.Module() * rhs.Module()));
     }
 
-    //NO FUNCIONA ENCARA
-    public static Vec3 Lerp(Vec3 origin, Vec3 target, float time)
-    {
-        return (target - origin) * (Time.deltaTime / time);
-    }
-
     //OPERADORS
     public static Vec3 operator +(Vec3 lhs, Vec3 rhs)
     {
-        return new Vec3(lhs.x + rhs.x, lhs.y + rhs.y, lhs.x + rhs.z);
+        return new Vec3(lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z);
     }
     public static Vec3 operator -(Vec3 lhs, Vec3 rhs)
     {
-        return new Vec3(lhs.x - rhs.x, lhs.y - rhs.y, lhs.x - rhs.z);
+        return new Vec3(lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z);
     }
     public static Vec3 operator *(Vec3 v, float f)
     {

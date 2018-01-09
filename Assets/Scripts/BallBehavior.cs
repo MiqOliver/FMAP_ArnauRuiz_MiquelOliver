@@ -8,12 +8,13 @@ public class BallBehavior : MonoBehaviour {
     public float velocitat;
     public float initPosition;
 
-    private Vector3 initPos;
-    public Vector3 axis;
+    private Vec3 initPos;
+    [SerializeField]
+    public Vec3 axis;
 
 	// Use this for initialization
 	void Start () {
-        initPos = this.transform.position;
+        initPos = (Vec3)this.transform.position;
 	}
 	
 	// Update is called once per frame

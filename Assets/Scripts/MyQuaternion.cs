@@ -131,6 +131,26 @@ public class Quat {
 
         return q;
     }
+    public static Vec3 operator *(Quat quat, Vec3 vec)
+    {
+        float num = quat.x * 2f;
+        float num2 = quat.y * 2f;
+        float num3 = quat.z * 2f;
+        float num4 = quat.x * num;
+        float num5 = quat.y * num2;
+        float num6 = quat.z * num3;
+        float num7 = quat.x * num2;
+        float num8 = quat.x * num3;
+        float num9 = quat.y * num3;
+        float num10 = quat.w * num;
+        float num11 = quat.w * num2;
+        float num12 = quat.w * num3;
+        Vec3 result;
+        result.x = (1f - (num5 + num6)) * vec.x + (num7 - num12) * vec.y + (num8 + num11) * vec.z;
+        result.y = (num7 + num12) * vec.x + (1f - (num4 + num6)) * vec.y + (num9 - num10) * vec.z;
+        result.z = (num8 - num11) * vec.x + (num9 + num10) * vec.y + (1f - (num4 + num5)) * vec.z;
+        return result;
+    }
 
     //CAST DE quat a Quaternion
     public static explicit operator Quat(Quaternion v)

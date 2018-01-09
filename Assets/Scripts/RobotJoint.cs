@@ -21,13 +21,13 @@ namespace ENTICourse.IK
         [Header("Initial position")]
         // The offset at resting position
         [ReadOnly]
-        public Vector3 StartOffset;
+        public Vec3 StartOffset;
 
         // The initial one
         [ReadOnly]
-        public Vector3 ZeroEuler;
+        public Vec3 ZeroEuler;
 
-        private Vector3 initRotation;
+        private Vec3 initRotation;
 
 
 
@@ -44,8 +44,8 @@ namespace ENTICourse.IK
 
         void Awake()
         {
-            ZeroEuler = transform.localEulerAngles;
-            StartOffset = transform.localPosition;
+            ZeroEuler = (Vec3)transform.localEulerAngles;
+            StartOffset = (Vec3)transform.localPosition;
         }
 
         // Update is called once per frame

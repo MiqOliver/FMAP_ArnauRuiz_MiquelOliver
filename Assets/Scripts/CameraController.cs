@@ -7,20 +7,20 @@ public class CameraController : MonoBehaviour {
     public GameObject player;
     public float cameraSmooth = .1f;
 
-    private Vector3 offset;
+    private Vec3 offset;
 
     // Use this for initialization
     void Start () {
-        offset = transform.position - player.transform.position;
+        offset = (Vec3)transform.position - (Vec3)player.transform.position;
     }
 	
 	// Runs every frame, after all items have been processed
 	void LateUpdate ()
     {
-        Vector3 desiredPosition = player.transform.position + offset;
-        Vector3 smoothedPosition = Vector3.Lerp(transform.position, desiredPosition, cameraSmooth);
+        Vec3 desiredPosition = (Vec3)player.transform.position + offset;
+        Vec3 smoothedPosition = (Vec3)Vector3.Lerp(transform.position, (Vector3)desiredPosition, cameraSmooth);
         
-        transform.position = smoothedPosition;
+        transform.position = (Vector3)smoothedPosition;
         transform.LookAt(player.transform.position);
 
     }

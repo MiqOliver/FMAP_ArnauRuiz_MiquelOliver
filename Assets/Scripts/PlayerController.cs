@@ -3,57 +3,66 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-[RequireComponent(typeof(RigidBody))]
 public class PlayerController : MonoBehaviour {
 
     public enum State { DIRECTION, PROPULSION, STRINGS, JUMP, LANDING };
 
-    public float speed;
-    //public bool isMoving;
-    //Animator animation;
-    private RigidBody rb;
-    public GameObject resetButton;
-    
-    private Vector3 inicialPosition;
-    private Quaternion inicialRotation;
+    public float elasticConstant;
 
-    private Vec3 auxVel;
-    private Vec3 direction;
+    public GameObject resetButton;
+
+    [System.NonSerialized]
+    public Vec3 inicialPosition;
+    [System.NonSerialized]
+    public Quat inicialRotation;
+
+    [System.NonSerialized]
+    public Vec3 auxVel;
+    [System.NonSerialized]
+    public Vec3 direction;
     public bool grounded = true;
 
     public Text text;
-    //private int time_speed;
 
-    private static State state;
+    [System.NonSerialized]
+    public State state;
 
-    private float ang;
+    [System.NonSerialized]
+    public float ang;
     private bool increaseAngle;
     [Range(0, 70)]
     public int maxAngle;
 
-    private float velocity;
+    [System.NonSerialized]
+    public float velocity;
     private bool increase;
-    [Range (15, 20)]
-    public int maxForce;
-    [Range(5, 10)]
-    public int minForce;
+    [System.NonSerialized]
+    public float maxForce;
+    [System.NonSerialized]
+    public float minForce;
 
     public Slider powerBar;
     public Image redArrow;
-    //public Image forceBar;
 
-    private float powerSpeed;
-    private int turnSpeed;
+    [System.NonSerialized]
+    public float powerSpeed;
+    [System.NonSerialized]
+    public int turnSpeed;
 
     public Vec3 endPos;
-    private Vector3 previousPos;
+    private Vec3 previousPos;
+
+    [ReadOnly]
+    public float drag = 0.25f;
+
     void Start()
     {
+        minForce = 0.1f;
+        maxForce = Mathf.PI / 2;
 
         powerSpeed = (maxForce - minForce) / (Time.deltaTime * 180);
         turnSpeed = 50;
-
-        //powerBar = GameObject.Find("Power Bar").GetComponent<Slider>();
+        
         powerBar.minValue = minForce;
         powerBar.maxValue = maxForce;
         powerBar.value = velocity;
@@ -67,25 +76,22 @@ public class PlayerController : MonoBehaviour {
         increaseAngle = true;
         maxAngle = 70;
 
-        inicialPosition = transform.position;
-        inicialRotation = transform.rotation;
-
-        //animation = GetComponent<Animator>();
-        rb = GetComponent<RigidBody>();
+        inicialPosition = (Vec3)transform.position;
+        inicialRotation = (Quat)transform.rotation;
         
         auxVel = new Vec3(0.0f, 1.5f, 0.0f);
         direction = auxVel;
-        //time_speed = 1;
         text.text = "Force: " + velocity.ToString();
     }
+
+
     private void CheckPoint()
     {
-        transform.position = previousPos;
-        transform.rotation = inicialRotation;
+        transform.position = (Vector3)previousPos;
+        transform.rotation = (Quaternion)inicialRotation;
         powerSpeed = (maxForce - minForce) / (Time.deltaTime * 180);
         turnSpeed = 50;
-
-        //powerBar = GameObject.Find("Power Bar").GetComponent<Slider>();
+        
         powerBar.minValue = minForce;
         powerBar.maxValue = maxForce;
         powerBar.value = velocity;
@@ -102,15 +108,20 @@ public class PlayerController : MonoBehaviour {
         //time_speed = 1;
         text.text = "Force: " + velocity.ToString();
     }
+
+
     //Before rendering a frame
     void Update()
     {
-        if(this.transform.position.y < -100){
+        if(this.transform.position.y < -50){
             CheckPoint();
         }
         switch (state)
         {
             case State.DIRECTION:
+                VisualDebug.DisableRenderer(VisualDebug.Vectors.GREEN, transform);
+                VisualDebug.DisableRenderer(VisualDebug.Vectors.RED, transform);
+
                 redArrow.gameObject.SetActive(true);
                 text.text = "Angle: " + Mathf.Round(ang).ToString();
 
@@ -129,17 +140,17 @@ public class PlayerController : MonoBehaviour {
                 }
                 if (InputManager.Space())
                 {
-                    Quaternion rotate = Quaternion.AngleAxis(ang, this.transform.up);
-                    this.transform.rotation = rotate * this.transform.rotation;
+                    Quat rotate = Quat.AngleAxis(ang, (Vec3)this.transform.up);
+                    this.transform.rotation = (Quaternion)(rotate * (Quat)this.transform.rotation);
                     redArrow.gameObject.SetActive(false);
                     velocity = minForce;
                     state = State.PROPULSION;
-                    previousPos = transform.position;
+                    previousPos = (Vec3)transform.position;
                 }
 
                 float angArrow = ang;
-                Quaternion rotateArrow = Quaternion.AngleAxis(ang-90, -this.transform.forward);
-                redArrow.transform.rotation = rotateArrow * this.transform.rotation;
+                Quat rotateArrow = Quat.AngleAxis(ang-90, (Vec3)this.transform.forward * -1);
+                redArrow.transform.rotation = (Quaternion)(rotateArrow * (Quat)this.transform.rotation);
 
                 break;
 
@@ -166,97 +177,59 @@ public class PlayerController : MonoBehaviour {
                 if (InputManager.Space())
                 {
 
-                    state = State.JUMP;
+                    state = State.STRINGS;
                     grounded = false;
                     powerBar.gameObject.SetActive(false);
-                    Vec3 endPos = Physics_functions.TrobarPosicioFinalTir((direction + (Vec3)this.transform.forward) * velocity, this.transform);
-                    GameObject.Find("base").GetComponent<ENTICourse.IK.InverseKinematics>().target = (Vector3)endPos;
+                    direction += (Vec3)transform.forward;
                 }
                
                 break;
 
             case State.STRINGS:
+                direction = Physics_functions.Molla(direction, transform);
+                state = State.JUMP;
                 break;
             case State.JUMP:
                 if (!grounded)
                 {
-                    Physics_functions.TirParabolic((direction + (Vec3)this.transform.forward) * velocity, this.transform);
+                    transform.position = (Vector3)Physics_functions.TirParabolic(direction, this.transform);
                     direction.y -= 9.81f * Time.deltaTime;
-                    //endPos = Physics_functions.TrobarPosicioFinalTir(direction, (Vec3)this.transform.position);
-            
+
                 }
+                VisualDebug.DrawVector(direction, VisualDebug.Vectors.GREEN, transform);
                 break;
+
             case State.LANDING:
+
+                Vec3 friction = Physics_functions.FrictionJump(direction, drag);
+                VisualDebug.DrawVector(friction, VisualDebug.Vectors.RED, transform);
+                //x = x0 + (v0 + Ft) * t
+                direction += Physics_functions.TirParabolic(friction, transform) * Time.deltaTime;
+                float aux = (direction * Time.deltaTime).Module();
+                if (aux >= 0.0001f && (direction.z * Time.deltaTime) >= 0)
+                    transform.position += transform.forward * aux;
+                else
+                {
+                    state = State.DIRECTION;
+                    transform.rotation = (Quaternion)inicialRotation;
+                    direction = auxVel;
+                }
                 break;
             default:
                 break;
         }
-
-        //GetComponent<LineRenderer>().SetPositions(new Vector3[]{ transform.position, transform.position + (new Vector3(velocity.x, velocity.y, velocity.z) + transform.forward) * force});
     }
 
     IEnumerator TimerSpeed(float s)
     {
-        //text.text = "Force: " + time_speed.ToString();
         yield return new WaitForSeconds(s);
-        //time_speed++;
-        //time_speed = time_speed % 10;
-        //text.text = "Force: " + time_speed.ToString();
-        //if (grounded)
-        //    TimerSpeed(s);
-
         grounded = true;
-    }
-
-    private void OnCollisionEnter(Collision other)
-    {
-        if (other.transform.tag == "Ground")
-        {
-            grounded = true;
-            transform.rotation = inicialRotation;
-            state = State.DIRECTION;
-            direction = auxVel;
-            powerSpeed = (maxForce - minForce) / (Time.deltaTime * 180);
-            turnSpeed = 50;
-
-            //powerBar = GameObject.Find("Power Bar").GetComponent<Slider>();
-            powerBar.minValue = minForce;
-            powerBar.maxValue = maxForce;
-            powerBar.value = velocity;
-
-
-            velocity = minForce;
-            increase = true;
-            //state = State.DIRECTION;
-
-            ang = 0;
-            increaseAngle = true;
-
-
-            //animation = GetComponent<Animator>();
-            //rb = GetComponent<RigidBody>();
-
-            auxVel = new Vec3(0.0f, 1.5f, 0.0f);
-            direction = auxVel;
-            //time_speed = 1;
-            text.text = "Force: " + velocity.ToString();
-
-        }
-    }
-
-    /// <summary>
-    /// returns the actual state of the state machine
-    /// </summary>
-    /// <returns></returns>
-    public static State GetState()
-    {
-        return state;
     }
 
     public void Reset()
     {
-        transform.position = inicialPosition;
-        transform.rotation = inicialRotation;
+        transform.position = (Vector3)inicialPosition;
+        transform.rotation = (Quaternion)inicialRotation;
         powerBar.gameObject.SetActive(false);
         Start();
     }
